@@ -17,10 +17,17 @@ public class ObjectHandler : MonoBehaviour
 
     private bool start;
 
+    private float points;
+    public TextMeshProUGUI pointsText;
     private float score;
     public TextMeshProUGUI scoreText;
-
     private int level;
+    public TextMeshProUGUI levelText;
+
+    public TextMeshProUGUI levelTitleText;
+
+    private bool spawnCube;
+
 
     // Start is called before the first frame update
     void Start()
@@ -29,12 +36,11 @@ public class ObjectHandler : MonoBehaviour
 
         gameObjects = new List<GameObject>();
 
-        for (int i = 0; i < 3; i++) { SpawnObject(sphere, "Sphere"); SpawnObject(capsule, "Capsule"); }
-
         keyPressed = 'f';
 
-        level = 1;
+        level = 0;
 
+        spawnCube = false;
 
     }
 
@@ -46,19 +52,71 @@ public class ObjectHandler : MonoBehaviour
             UpdateMapOfObjects();
 
             scoreText.text = "Score: " + score;
+            levelText.text = "Level: " + level;
+            pointsText.text = "Points: " + points;
 
             time = time + Time.deltaTime;
-            if (time > 1.5f)
+            if (time > 1 && spawnCube)
             {
                 SpawnObject(cube, "Cube");
                 time = 0;
             }
+
 
         }
 
     }
 
     public void StartGame() { start = true; }
+
+    public void NewLevel()
+    {
+        level++;
+
+        RemoveAllObjects();
+
+        StartCoroutine(LevelTitleText());
+
+        StartCoroutine(SpawnObjects());
+
+    }
+
+    IEnumerator SpawnObjects()
+    {
+        spawnCube = false;
+        yield return new WaitForSeconds(3f);
+        spawnCube = true;
+        for (int i = 0; i < 4; i++) { SpawnObject(sphere, "Sphere"); SpawnObject(capsule, "Capsule"); }
+    }
+
+    IEnumerator LevelTitleText()
+    {
+        levelTitleText.text = "Level " + level;
+        yield return new WaitForSeconds(2f);
+        levelTitleText.text = "";
+    }
+
+    private void LevelCheck() 
+    {
+        int pointCheck = 10000;
+        switch (level)
+        {
+            case 1:
+                pointCheck = 100;
+                break;
+            case 2:
+                pointCheck = 200;
+                break;
+            case 3:
+                pointCheck = 400;
+                break;
+            case 4:
+                //winner!!!
+                break;
+        }
+
+        if (points >= pointCheck) { NewLevel(); }
+    }
 
     private void SpawnObject(GameObject obj, string name)
     {
@@ -284,18 +342,50 @@ public class ObjectHandler : MonoBehaviour
             {
                 if (gameObjects[i].transform.position.x == 0 && gameObjects[i].transform.position.z == 0)
                 {
-                    AddPoints(gameObjects[i].name);
-                    GameObject tempObj = gameObjects[i];
-                    gameObjects.RemoveAt(i);
-                    Destroy(tempObj);
+                    string name = gameObjects[i].name;
+                    RemoveObject(i);
+                    AddPoints(name);
                 }
+
+                else if (gameObjects[i].name == "Sphere" || gameObjects[i].name == "Capsule")
+                {
+                    if (gameObjects[i].transform.position.x > 8 || gameObjects[i].transform.position.x < -8 || 
+                        gameObjects[i].transform.position.z > 8 || gameObjects[i].transform.position.z < -8) { RemoveObject(i); }
+                }
+
             }
             
         }
     }
 
+    private void RemoveObject(int i)
+    {
+        if (gameObjects[i].name == "Sphere") { SpawnObject(sphere, "Sphere"); }
+        else if (gameObjects[i].name == "Capsule") { SpawnObject(capsule, "Capsule"); }
+
+        GameObject tempObj = gameObjects[i];
+        gameObjects.RemoveAt(i);
+        Destroy(tempObj);
+    }
+
+    private void RemoveAllObjects()
+    {
+        Debug.Log("Remove Objects");
+        Debug.Log("gameObjects Count = " + gameObjects.Count);
+        int loopCount = gameObjects.Count;
+        for (int i = 0; i < loopCount; i++)
+        {
+            GameObject tempObj = gameObjects[0];
+            gameObjects.RemoveAt(0);
+            Destroy(tempObj);
+            Debug.Log(i);
+        }
+    }
+
     private void AddPoints(string objName)
     {
+        points = points + 10;
+
         int increaseAmount = 0;
         switch (objName)
         {
@@ -337,6 +427,6 @@ public class ObjectHandler : MonoBehaviour
         }
 
         score = score + increaseAmount;
-
+        LevelCheck();
     }
 }
