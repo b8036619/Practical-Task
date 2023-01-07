@@ -23,7 +23,7 @@ public class MoveCube : MonoBehaviour
     {
         if (Input.GetKeyDown("w"))
         {
-            this.gameObject.transform.position += new Vector3(0,0,1);
+            this.gameObject.transform.position += new Vector3(0, 0, 1);
         }
         if (Input.GetKeyDown("a"))
         {
