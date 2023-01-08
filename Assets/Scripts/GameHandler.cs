@@ -3,19 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class ObjectHandler : MonoBehaviour
+public class GameHandler : MonoBehaviour
 {
     public GameObject cube;
     public GameObject sphere;
     public GameObject capsule;
 
     private float time = 0;
+    private float overallTime = 0;
+
+    private int numPushedObj = 0;
 
     private List<GameObject> gameObjects;
 
     private char keyPressed;
 
-    private bool start;
+    private bool play;
 
     private float points;
     public TextMeshProUGUI pointsText;
@@ -28,13 +31,19 @@ public class ObjectHandler : MonoBehaviour
 
     private bool spawnCube;
 
+    private List<string> previouslyRemovedObj;
+
+    public Menu menu;
+
 
     // Start is called before the first frame update
     void Start()
     {
-        start = false;
+        play = false;
 
         gameObjects = new List<GameObject>();
+
+        previouslyRemovedObj = new List<string>();
 
         keyPressed = 'f';
 
@@ -42,18 +51,26 @@ public class ObjectHandler : MonoBehaviour
 
         spawnCube = false;
 
+        overallTime = 0;
+
+        numPushedObj = 0;
+
+        points = 0;
+
+        score = 0;
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (start) 
+        if (play) 
         {
-            UpdateMapOfObjects();
-
             scoreText.text = "Score: " + score;
             levelText.text = "Level: " + level;
             pointsText.text = "Points: " + points;
+
+            UpdateMapOfObjects();
 
             time = time + Time.deltaTime;
             if (time > 1 && spawnCube)
@@ -62,12 +79,34 @@ public class ObjectHandler : MonoBehaviour
                 time = 0;
             }
 
+            overallTime = overallTime + Time.deltaTime;
 
         }
 
     }
 
-    public void StartGame() { start = true; }
+    private void FixedUpdate()
+    {
+        if (play)
+        {
+            LossCheck();
+        }
+    }
+
+    public void StartGame() { play = true; }
+
+    public void StartAgain() 
+    {
+        previouslyRemovedObj.Clear();
+        keyPressed = 'f';
+        level = 0;
+        spawnCube = false;
+        overallTime = 0;
+        numPushedObj = 0;
+        points = 0;
+        score = 0;
+        play = true;
+    }
 
     public void NewLevel()
     {
@@ -84,7 +123,7 @@ public class ObjectHandler : MonoBehaviour
     IEnumerator SpawnObjects()
     {
         spawnCube = false;
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(1f);
         spawnCube = true;
         for (int i = 0; i < 4; i++) { SpawnObject(sphere, "Sphere"); SpawnObject(capsule, "Capsule"); }
     }
@@ -111,11 +150,17 @@ public class ObjectHandler : MonoBehaviour
                 pointCheck = 400;
                 break;
             case 4:
-                //winner!!!
+                
                 break;
         }
 
-        if (points >= pointCheck) { NewLevel(); }
+        if (points >= 400)
+        {
+            play = false;
+            menu.EndScreen(overallTime, score, numPushedObj, true);
+        }
+
+        else if (points >= pointCheck) { NewLevel(); }
     }
 
     private void SpawnObject(GameObject obj, string name)
@@ -153,6 +198,28 @@ public class ObjectHandler : MonoBehaviour
             if (attempts == 300) { break; }
         }
 
+    }
+
+    private void LossCheck()
+    {
+        int numSurroundingCubes = 0;
+
+        for (int i = 0; i < gameObjects.Count; i++)
+        {
+            if (gameObjects[i].name == "Cube" && 
+                ((gameObjects[i].transform.position.x == 1 && gameObjects[i].transform.position.z == 0) ||
+                (gameObjects[i].transform.position.x == -1 && gameObjects[i].transform.position.z == 0) ||
+                (gameObjects[i].transform.position.x == 0 && gameObjects[i].transform.position.z == 1) ||
+                (gameObjects[i].transform.position.x == 0 && gameObjects[i].transform.position.z == -1))) 
+            { numSurroundingCubes++; }
+        }
+
+        if (numSurroundingCubes == 4) 
+        {
+            play = false;
+            menu.EndScreen(overallTime, score, numPushedObj, false);
+        }
+        
     }
 
     private void UpdateMapOfObjects()
@@ -221,6 +288,7 @@ public class ObjectHandler : MonoBehaviour
                                             l = k;
                                             found = true;
                                             checkVal = 0;
+                                            numPushedObj++;
 
                                         }
                                     }
@@ -255,6 +323,7 @@ public class ObjectHandler : MonoBehaviour
                                             l = k;
                                             found = true;
                                             checkVal = 0;
+                                            numPushedObj++;
 
                                         }
                                     }
@@ -288,6 +357,7 @@ public class ObjectHandler : MonoBehaviour
                                             l = k;
                                             found = true;
                                             checkVal = 0;
+                                            numPushedObj++;
 
                                         }
                                     }
@@ -321,6 +391,7 @@ public class ObjectHandler : MonoBehaviour
                                             l = k;
                                             found = true;
                                             checkVal = 0;
+                                            numPushedObj++;
 
                                         }
                                     }
@@ -370,15 +441,12 @@ public class ObjectHandler : MonoBehaviour
 
     private void RemoveAllObjects()
     {
-        Debug.Log("Remove Objects");
-        Debug.Log("gameObjects Count = " + gameObjects.Count);
         int loopCount = gameObjects.Count;
         for (int i = 0; i < loopCount; i++)
         {
             GameObject tempObj = gameObjects[0];
             gameObjects.RemoveAt(0);
             Destroy(tempObj);
-            Debug.Log(i);
         }
     }
 
@@ -386,7 +454,7 @@ public class ObjectHandler : MonoBehaviour
     {
         points = points + 10;
 
-        int increaseAmount = 0;
+        float increaseAmount = 0;
         switch (objName)
         {
             case "Sphere":
@@ -425,6 +493,26 @@ public class ObjectHandler : MonoBehaviour
 
                 break;
         }
+
+        if (previouslyRemovedObj.Count > 0)
+        {
+            int previousCount = 0;
+            int pos = 1;
+            while (previouslyRemovedObj.Count - pos > -1)
+            {
+                if (previouslyRemovedObj[previouslyRemovedObj.Count - pos] == objName) { previousCount++; pos++; }
+                else { break; }
+            }
+
+            if (previousCount == 0) { previouslyRemovedObj.Clear(); }
+            else 
+            {
+                for (int i = 0; i < previousCount; i++) { increaseAmount = increaseAmount / 2; }
+            }
+
+        }
+
+        previouslyRemovedObj.Add(objName);
 
         score = score + increaseAmount;
         LevelCheck();
