@@ -18,10 +18,11 @@ public class Menu : MonoBehaviour
     public TextMeshProUGUI endPushedText;
     public GameObject playAgainButton;
 
+    public WriteJsonFile jsonCon;
 
 
-    // Start is called before the first frame update
-    void Start()
+
+    void Start() // At start only background and start button are displayed to player
     {
         background.SetActive(true);
         startButton.SetActive(true);
@@ -46,20 +47,14 @@ public class Menu : MonoBehaviour
         playAgainButton.SetActive(false);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    public void StartGame() 
+    public void StartGame() // Background and start button are hidden when game starts
     {
         background.SetActive(false);
         startButton.SetActive(false);
 
     }
 
-    public void PlayAgain()
+    public void PlayAgain() // End screen elements are hidden when the user selects to play again
     {
         endWinText.text = "";
         endTimeText.text = "";
@@ -68,9 +63,8 @@ public class Menu : MonoBehaviour
         playAgainButton.SetActive(false);
     }
 
-    public void EndScreen(float time, float score, int numPushed, bool win)
+    public void EndScreen(float time, float score, int numPushed, bool win) // End screen is displayed to user
     {
-        Debug.Log("End Screen");
         scoreText.text = "";
         levelText.text = "";
         pointsText.text = "";
@@ -80,6 +74,7 @@ public class Menu : MonoBehaviour
         if (win)
         {
             endWinText.text = "Winner";
+            jsonCon.writeJSON(time, score, numPushed);
         }
         else
         {
@@ -90,5 +85,6 @@ public class Menu : MonoBehaviour
         endScoreText.text = "Score: " + score;
         endPushedText.text = "Pushed Objects: " + numPushed;
 
+        
     }
 }

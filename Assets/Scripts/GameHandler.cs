@@ -36,8 +36,7 @@ public class GameHandler : MonoBehaviour
     public Menu menu;
 
 
-    // Start is called before the first frame update
-    void Start()
+    void Start() // Variables set at start
     {
         play = false;
 
@@ -61,19 +60,19 @@ public class GameHandler : MonoBehaviour
 
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (play) 
         {
-            scoreText.text = "Score: " + score;
+            // Score, level and points are updated
+            scoreText.text = "Score: " + (Mathf.Round(score * 1000.0f) * 0.001f);
             levelText.text = "Level: " + level;
             pointsText.text = "Points: " + points;
 
             UpdateMapOfObjects();
 
-            time = time + Time.deltaTime;
-            if (time > 1 && spawnCube)
+            time = time + Time.deltaTime; // Cubes are created every 0.5 seconds
+            if (time > 0.5f && spawnCube)
             {
                 SpawnObject(cube, "Cube");
                 time = 0;
@@ -93,9 +92,9 @@ public class GameHandler : MonoBehaviour
         }
     }
 
-    public void StartGame() { play = true; }
+    public void StartGame() { play = true; } // Allows the game to run
 
-    public void StartAgain() 
+    public void StartAgain() // Resets variables for the game to start from the begining
     {
         previouslyRemovedObj.Clear();
         keyPressed = 'f';
@@ -108,7 +107,7 @@ public class GameHandler : MonoBehaviour
         play = true;
     }
 
-    public void NewLevel()
+    public void NewLevel() // Sets up next level
     {
         level++;
 
@@ -120,7 +119,7 @@ public class GameHandler : MonoBehaviour
 
     }
 
-    IEnumerator SpawnObjects()
+    IEnumerator SpawnObjects() // Creates new spheres and capsules after 1 second
     {
         spawnCube = false;
         yield return new WaitForSeconds(1f);
@@ -128,14 +127,14 @@ public class GameHandler : MonoBehaviour
         for (int i = 0; i < 4; i++) { SpawnObject(sphere, "Sphere"); SpawnObject(capsule, "Capsule"); }
     }
 
-    IEnumerator LevelTitleText()
+    IEnumerator LevelTitleText() // Level number is displayed to the player for 2 seconds
     {
         levelTitleText.text = "Level " + level;
         yield return new WaitForSeconds(2f);
         levelTitleText.text = "";
     }
 
-    private void LevelCheck() 
+    private void LevelCheck() // Checks if the user has gained enough points to move to the next level or won
     {
         int pointCheck = 10000;
         switch (level)
@@ -163,7 +162,7 @@ public class GameHandler : MonoBehaviour
         else if (points >= pointCheck) { NewLevel(); }
     }
 
-    private void SpawnObject(GameObject obj, string name)
+    private void SpawnObject(GameObject obj, string name) // Creates a new sphere, capsule or cube and places it in a random location in the play area
     {
         int attempts = 0;
         while (true)
@@ -200,7 +199,7 @@ public class GameHandler : MonoBehaviour
 
     }
 
-    private void LossCheck()
+    private void LossCheck() // Checks if the player has been surrounded by cubes and if so loses
     {
         int numSurroundingCubes = 0;
 
@@ -222,7 +221,7 @@ public class GameHandler : MonoBehaviour
         
     }
 
-    private void UpdateMapOfObjects()
+    private void UpdateMapOfObjects() // Moves cubes based on player inputs and moves spheres and capsules if they are being pushed
     {
         bool updateMap = false;
 
@@ -237,7 +236,7 @@ public class GameHandler : MonoBehaviour
 
         if (updateMap == true)
         {
-            int testX = 0;
+            int testX = 0; // Check if the cube movement is possible
             int testZ = 0;
             bool possible = true;
             switch (keyPressed)
@@ -278,13 +277,13 @@ public class GameHandler : MonoBehaviour
 
                                 while (true)
                                 {
-                                    for (int k = 0; k < gameObjects.Count; k++)
+                                    for (int k = 0; k < gameObjects.Count; k++) // Loop to check if a row of objects is being pushed by cube
                                     {
                                         if ((gameObjects[k].name == "Sphere" || gameObjects[k].name == "Capsule") && (gameObjects[k].transform.position.z == gameObjects[l].transform.position.z + checkVal)
                                             && (gameObjects[k].transform.position.x == gameObjects[l].transform.position.x) && (k != l))
                                         {
 
-                                            gameObjects[k].transform.position += new Vector3(0, 0, 1);
+                                            gameObjects[k].transform.position += new Vector3(0, 0, 1); // Moves spheres and capsules if being pushed
                                             l = k;
                                             found = true;
                                             checkVal = 0;
@@ -297,7 +296,7 @@ public class GameHandler : MonoBehaviour
                                     else { found = false; }
                                 }
 
-                                gameObjects[i].transform.position += new Vector3(0, 0, 1);
+                                gameObjects[i].transform.position += new Vector3(0, 0, 1); // Moves Cube
                             }
 
 
@@ -411,7 +410,7 @@ public class GameHandler : MonoBehaviour
             
             for (int i = 0; i < gameObjects.Count; i++)
             {
-                if (gameObjects[i].transform.position.x == 0 && gameObjects[i].transform.position.z == 0)
+                if (gameObjects[i].transform.position.x == 0 && gameObjects[i].transform.position.z == 0) // Check if object is on player
                 {
                     string name = gameObjects[i].name;
                     RemoveObject(i);
@@ -420,7 +419,7 @@ public class GameHandler : MonoBehaviour
 
                 else if (gameObjects[i].name == "Sphere" || gameObjects[i].name == "Capsule")
                 {
-                    if (gameObjects[i].transform.position.x > 8 || gameObjects[i].transform.position.x < -8 || 
+                    if (gameObjects[i].transform.position.x > 8 || gameObjects[i].transform.position.x < -8 ||  // Check if object has left the play area
                         gameObjects[i].transform.position.z > 8 || gameObjects[i].transform.position.z < -8) { RemoveObject(i); }
                 }
 
@@ -429,7 +428,7 @@ public class GameHandler : MonoBehaviour
         }
     }
 
-    private void RemoveObject(int i)
+    private void RemoveObject(int i) // Removes object from game and if it is sphere or capsule another is created
     {
         if (gameObjects[i].name == "Sphere") { SpawnObject(sphere, "Sphere"); }
         else if (gameObjects[i].name == "Capsule") { SpawnObject(capsule, "Capsule"); }
@@ -439,7 +438,7 @@ public class GameHandler : MonoBehaviour
         Destroy(tempObj);
     }
 
-    private void RemoveAllObjects()
+    private void RemoveAllObjects() // Removes all objects from game
     {
         int loopCount = gameObjects.Count;
         for (int i = 0; i < loopCount; i++)
@@ -450,7 +449,7 @@ public class GameHandler : MonoBehaviour
         }
     }
 
-    private void AddPoints(string objName)
+    private void AddPoints(string objName) // Adds points depending on level and the previous objects the player has gained score from
     {
         points = points + 10;
 
